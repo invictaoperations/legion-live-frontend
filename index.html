@@ -14,25 +14,17 @@
       color: white;
       padding: 20px;
     }
-
     input, button {
-      padding: 12px;
-      margin: 8px 0;
+      padding: 10px;
+      margin: 5px 0;
       width: 100%;
-      max-width: 320px;
-      font-size: 16px;
+      max-width: 300px;
+      display: block;
     }
-
-    button {
-      background: #444;
-      color: white;
-      border: none;
-    }
-
     video {
       width: 300px;
       margin-top: 10px;
-      border: 2px solid #333;
+      border: 2px solid #444;
       background: black;
     }
   </style>
@@ -43,7 +35,7 @@
 
 <input id="username" placeholder="Username" />
 <input id="room" placeholder="Room name" />
-<button id="joinBtn">Join Room</button>
+<button onclick="joinRoom()">Join Room</button>
 
 <div id="videos"></div>
 
@@ -51,55 +43,65 @@
   const BACKEND_URL = "https://legion-live-backend-1.onrender.com";
   const LIVEKIT_URL = "wss://legion-live-qx4x35v2.livekit.cloud";
 
-  const joinBtn = document.getElementById("joinBtn");
-
-  joinBtn.onclick = async () => {
-    const username = document.getElementById("username").value.trim();
-    const roomName = document.getElementById("room").value.trim();
+  async function joinRoom() {
+    const username = document.getElementById("username").value;
+    const roomName = document.getElementById("room").value;
 
     if (!username || !roomName) {
-      alert("Username and room are required");
+      alert("Username and room required");
       return;
     }
 
-    // 1️⃣ Fetch token (inside user click)
+    // 1️⃣ Get token
     const res = await fetch(
       `${BACKEND_URL}/livekit/token?room=${roomName}&username=${username}`
     );
+    const data = await res.json();
 
-    const { token } = await res.json();
+    if (!data.token) {
+      alert("Token not received");
+      return;
+    }
 
     // 2️⃣ Create room
-    const room = new LivekitClient.Room();
+    const room = new LivekitClient.Room({
+      adaptiveStream: true,
+      dynacast: true,
+    });
 
     // 3️⃣ Connect
-    await room.connect(LIVEKIT_URL, token);
+    await room.connect(LIVEKIT_URL, data.token);
 
-    // 4️⃣ Enable camera + mic (REQUIRED)
-    await room.localParticipant.enableCameraAndMicrophone();
+    // 4️⃣ ENABLE CAMERA + MIC (ANDROID SAFE)
+    await room.localParticipant.setCameraEnabled(true);
+    await room.localParticipant.setMicrophoneEnabled(true);
 
-    // 5️⃣ Attach LOCAL video (ANDROID CRITICAL)
-    const localVideoTrack =
-      Array.from(room.localParticipant.videoTracks.values())[0]?.track;
+    // 5️⃣ ATTACH LOCAL VIDEO (THIS IS THE PART YOU WERE MISSING)
+    const videoTrackPub = Array.from(
+      room.localParticipant.videoTrackPublications.values()
+    )[0];
 
-    if (localVideoTrack) {
-      const videoEl = localVideoTrack.attach();
-      videoEl.autoplay = true;
-      videoEl.muted = true;        // REQUIRED on Android
-      videoEl.playsInline = true; // REQUIRED on Android
+    if (videoTrackPub && videoTrackPub.track) {
+      const videoEl = videoTrackPub.track.attach();
+      videoEl.muted = true;           // REQUIRED
+      videoEl.autoplay = true;        // REQUIRED
+      videoEl.playsInline = true;     // REQUIRED (ANDROID)
       document.getElementById("videos").appendChild(videoEl);
     }
 
-    // 6️⃣ Attach REMOTE videos
-    room.on("trackSubscribed", (track) => {
-      if (track.kind === "video") {
-        const el = track.attach();
-        el.autoplay = true;
-        el.playsInline = true;
-        document.getElementById("videos").appendChild(el);
+    // 6️⃣ REMOTE PARTICIPANTS
+    room.on(
+      LivekitClient.RoomEvent.TrackSubscribed,
+      (track) => {
+        if (track.kind === "video") {
+          const el = track.attach();
+          el.autoplay = true;
+          el.playsInline = true;
+          document.getElementById("videos").appendChild(el);
+        }
       }
-    });
-  };
+    );
+  }
 </script>
 
 </body>
