@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Legion Live</title>
+
+  <script src="https://unpkg.com/livekit-client/dist/livekit-client.umd.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      padding: 20px;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      max-width: 300px;
+    }
+    video {
+      width: 300px;
+      margin: 10px;
+      border: 2px solid #444;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Legion Live</h2>
+
+<input id="username" placeholder="Username" />
+<input id="room" placeholder="Room name" />
+<button onclick="joinRoom()">Join Room</button>
+
+<div id="videos"></div>
+
+<script>
+  const BACKEND_URL = "https://legion-live-backend-1.onrender.com";
+  const LIVEKIT_URL = "wss://legion-live-qx4x35v2.livekit.cloud";
+
+  async function joinRoom() {
+    const username = document.getElementById("username").value;
+    const roomName = document.getElementById("room").value;
+
+    if (!username || !roomName) {
+      alert("Username and room required");
+      return;
+    }
+
+    const res = await fetch(
+      `${BACKEND_URL}/livekit/token?room=${roomName}&username=${username}`
+    );
+
+    const data = await res.json();
+    const token = data.token;
+
+    const room = new LivekitClient.Room();
+    await room.connect(LIVEKIT_URL, token);
+
+    await room.localParticipant.enableCameraAndMicrophone();
+
+    room.on("trackSubscribed", (track) => {
+      const el = track.attach();
+      document.getElementById("videos").appendChild(el);
+    });
+
+    room.localParticipant.tracks.forEach((pub) => {
+      if (pub.track) {
+        const el = pub.track.attach();
+        document.getElementById("videos").appendChild(el);
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
