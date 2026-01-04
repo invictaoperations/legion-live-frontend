@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Legion Live</title>
 
-  <!-- LiveKit Client -->
+  <!-- LiveKit client -->
   <script src="https://unpkg.com/livekit-client/dist/livekit-client.umd.js"></script>
 
   <style>
@@ -14,16 +14,17 @@
       color: white;
       padding: 20px;
     }
-
     input, button {
-      padding: 12px;
+      padding: 10px;
       margin: 8px 0;
       width: 100%;
       max-width: 320px;
       font-size: 16px;
     }
-
-    video {
+    button {
+      cursor: pointer;
+    }
+    #videos video {
       width: 100%;
       max-width: 320px;
       margin-top: 10px;
@@ -32,92 +33,81 @@
     }
   </style>
 </head>
+
 <body>
+  <h2>Legion Live</h2>
 
-<h2>Legion Live</h2>
+  <input id="username" placeholder="Username" />
+  <input id="room" placeholder="Room name" />
+  <button onclick="joinRoom()">Join Room</button>
 
-<input id="username" placeholder="Username" />
-<input id="room" placeholder="Room name" />
-<button id="joinBtn">Join Room</button>
+  <div id="videos"></div>
 
-<div id="videos"></div>
+  <script>
+    const BACKEND_URL = "https://legion-live-backend-1.onrender.com";
 
-<script>
-  const BACKEND_URL = "https://legion-live-backend-1.onrender.com";
-  const LIVEKIT_URL = "wss://legion-live-qx4x35v2.livekit.cloud";
+    async function joinRoom() {
+      try {
+        const username = document.getElementById("username").value.trim();
+        const roomName = document.getElementById("room").value.trim();
 
-  const joinBtn = document.getElementById("joinBtn");
-  const videosDiv = document.getElementById("videos");
-
-  // 🔧 ONLY THIS FUNCTION IS CHANGED
-  joinBtn.onclick = async () => {
-    try {
-      alert("STEP 1: Click registered");
-
-      const username = document.getElementById("username").value.trim();
-      const roomName = document.getElementById("room").value.trim();
-
-      if (!username || !roomName) {
-        alert("Missing username or room");
-        return;
-      }
-
-      alert("STEP 2: Fetching token");
-      const res = await fetch(
-        `${BACKEND_URL}/livekit/token?room=${roomName}&username=${username}`
-      );
-      const data = await res.json();
-
-      if (!data.token) {
-        alert("ERROR: Token missing");
-        return;
-      }
-
-      alert("STEP 3: Token received");
-
-      const room = new LivekitClient.Room();
-
-      alert("STEP 4: Connecting to LiveKit");
-      await room.connect(LIVEKIT_URL, data.token);
-
-      alert("STEP 5: Connected");
-
-      alert("STEP 6: Creating local tracks");
-      const tracks = await LivekitClient.createLocalTracks({
-        audio: true,
-        video: true,
-      });
-
-      alert("STEP 7: Tracks created");
-
-      for (const track of tracks) {
-        await room.localParticipant.publishTrack(track);
-
-        if (track.kind === "video") {
-          const el = track.attach();
-          el.muted = true;
-          el.autoplay = true;
-          el.playsInline = true;
-          videosDiv.appendChild(el);
+        if (!username || !roomName) {
+          alert("Username and room required");
+          return;
         }
-      }
 
-      alert("STEP 8: Video attached");
+        // STEP 1: Fetch token
+        const res = await fetch(
+          `${BACKEND_URL}/livekit/token?room=${roomName}&username=${username}`
+        );
 
-      room.on("trackSubscribed", (track) => {
-        if (track.kind === "video") {
-          const el = track.attach();
-          el.autoplay = true;
-          el.playsInline = true;
-          videosDiv.appendChild(el);
+        const data = await res.json();
+        const token = data.token;
+
+        if (!token) {
+          alert("Failed to get token");
+          return;
         }
-      });
 
-    } catch (err) {
-      alert("ERROR: " + (err && err.message ? err.message : err));
+        // STEP 2: Create room
+        const room = new LivekitClient.Room();
+
+        // ✅ THE FIXED LINE (DO NOT CHANGE)
+        await room.connect(
+          "wss://legion-live-qx4x35v2.livekit.cloud",
+          token
+        );
+
+        // STEP 3: Enable camera + mic (required for Android)
+        await room.localParticipant.enableCameraAndMicrophone();
+
+        // STEP 4: Show local video
+        room.localParticipant.videoTracks.forEach(pub => {
+          const track = pub.track;
+          if (track) {
+            const el = track.attach();
+            el.autoplay = true;
+            el.muted = true;
+            el.playsInline = true;
+            document.getElementById("videos").appendChild(el);
+          }
+        });
+
+        // STEP 5: Show remote video
+        room.on("trackSubscribed", track => {
+          if (track.kind === "video") {
+            const el = track.attach();
+            el.autoplay = true;
+            el.playsInline = true;
+            document.getElementById("videos").appendChild(el);
+          }
+        });
+
+      } catch (err) {
+        console.error(err);
+        alert("ERROR: " + err.message);
+      }
     }
-  };
-</script>
-
+  </script>
 </body>
 </html>
