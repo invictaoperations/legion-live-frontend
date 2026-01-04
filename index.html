@@ -14,79 +14,99 @@
       color: white;
       padding: 20px;
     }
+
     input, button {
       padding: 10px;
       margin: 5px 0;
       width: 100%;
       max-width: 300px;
+      display: block;
     }
+
+    #videos {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
     video {
       width: 300px;
-      margin: 10px;
       border: 2px solid #444;
+      background: black;
     }
   </style>
 </head>
-
 <body>
-  <h2>Legion Live</h2>
 
-  <input id="username" placeholder="Username" />
-  <input id="room" placeholder="Room name" />
-  <button onclick="joinRoom()">Join Room</button>
+<h2>Legion Live</h2>
 
-  <div id="videos"></div>
+<input id="username" placeholder="Username" />
+<input id="room" placeholder="Room name" />
+<button onclick="joinRoom()">Join Room</button>
 
-  <script>
-    const BACKEND_URL = "https://legion-live-backend-1.onrender.com";
-    const LIVEKIT_URL = "wss://legion-live-qx4x35v2.livekit.cloud";
+<div id="videos"></div>
 
-    async function joinRoom() {
-      const username = document.getElementById("username").value;
-      const roomName = document.getElementById("room").value;
+<script>
+  const BACKEND_URL = "https://legion-live-backend-1.onrender.com";
+  const LIVEKIT_URL = "wss://legion-live-qx4x35v2.livekit.cloud";
 
-      if (!username || !roomName) {
-        alert("Username and room required");
-        return;
-      }
+  async function joinRoom() {
+    const username = document.getElementById("username").value.trim();
+    const roomName = document.getElementById("room").value.trim();
 
-      // 1️⃣ Get token
-      const res = await fetch(
-        `${BACKEND_URL}/livekit/token?room=${roomName}&username=${username}`
-      );
-      const data = await res.json();
-      const token = data.token;
-
-      // 2️⃣ Connect to LiveKit
-      const room = new LivekitClient.Room();
-      await room.connect(LIVEKIT_URL, token);
-
-      // 3️⃣ Enable camera + mic
-      await room.localParticipant.enableCameraAndMicrophone();
-
-      // 4️⃣ Attach LOCAL video (CRITICAL FIX)
-      const localTrackPub = Array.from(
-        room.localParticipant.videoTracks.values()
-      )[0];
-
-      if (localTrackPub && localTrackPub.track) {
-        const videoEl = localTrackPub.track.attach();
-        videoEl.autoplay = true;
-        videoEl.muted = true;        // REQUIRED on mobile
-        videoEl.playsInline = true;  // REQUIRED on mobile
-        document.getElementById("videos").appendChild(videoEl);
-      }
-
-      // 5️⃣ Attach REMOTE videos
-      room.on("trackSubscribed", (track) => {
-        if (track.kind === "video") {
-          const el = track.attach();
-          el.autoplay = true;
-          el.playsInline = true;
-          document.getElementById("videos").appendChild(el);
-        }
-      });
+    if (!username || !roomName) {
+      alert("Username and room required");
+      return;
     }
-  </script>
+
+    // 1️⃣ Fetch token
+    const res = await fetch(
+      `${BACKEND_URL}/livekit/token?room=${roomName}&username=${username}`
+    );
+    const data = await res.json();
+
+    if (!data.token) {
+      alert("Token error");
+      return;
+    }
+
+    const room = new LivekitClient.Room();
+
+    // 2️⃣ Connect
+    await room.connect(LIVEKIT_URL, data.token);
+
+    // 3️⃣ Enable camera + mic
+    await room.localParticipant.enableCameraAndMicrophone();
+
+    // 🔥 ANDROID FIX — local video
+    room.on("localTrackPublished", (pub) => {
+      if (pub.track && pub.track.kind === "video") {
+        const videoEl = pub.track.attach();
+        videoEl.muted = true;
+        videoEl.autoplay = true;
+        videoEl.playsInline = true;
+
+        document.getElementById("videos").appendChild(videoEl);
+
+        // 🚨 REQUIRED FOR ANDROID
+        videoEl.play().catch(() => {});
+      }
+    });
+
+    // Remote participants
+    room.on("trackSubscribed", (track) => {
+      if (track.kind === "video") {
+        const el = track.attach();
+        el.autoplay = true;
+        el.playsInline = true;
+
+        document.getElementById("videos").appendChild(el);
+        el.play().catch(() => {});
+      }
+    });
+  }
+</script>
+
 </body>
 </html>
