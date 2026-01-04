@@ -49,37 +49,46 @@
   const joinBtn = document.getElementById("joinBtn");
   const videosDiv = document.getElementById("videos");
 
+  // 🔧 ONLY THIS FUNCTION IS CHANGED
   joinBtn.onclick = async () => {
     try {
+      alert("STEP 1: Click registered");
+
       const username = document.getElementById("username").value.trim();
       const roomName = document.getElementById("room").value.trim();
 
       if (!username || !roomName) {
-        alert("Username and room required");
+        alert("Missing username or room");
         return;
       }
 
-      // 1️⃣ Fetch token
-      const tokenRes = await fetch(
+      alert("STEP 2: Fetching token");
+      const res = await fetch(
         `${BACKEND_URL}/livekit/token?room=${roomName}&username=${username}`
       );
-      const tokenData = await tokenRes.json();
+      const data = await res.json();
 
-      if (!tokenData.token) {
-        alert("Failed to get token");
+      if (!data.token) {
+        alert("ERROR: Token missing");
         return;
       }
 
-      // 2️⃣ Create room
-      const room = new LiveKit.Room();
+      alert("STEP 3: Token received");
 
-      await room.connect(LIVEKIT_URL, tokenData.token);
+      const room = new LivekitClient.Room();
 
-      // 3️⃣ Explicitly request camera + mic (ANDROID SAFE)
-      const tracks = await LiveKit.createLocalTracks({
+      alert("STEP 4: Connecting to LiveKit");
+      await room.connect(LIVEKIT_URL, data.token);
+
+      alert("STEP 5: Connected");
+
+      alert("STEP 6: Creating local tracks");
+      const tracks = await LivekitClient.createLocalTracks({
         audio: true,
         video: true,
       });
+
+      alert("STEP 7: Tracks created");
 
       for (const track of tracks) {
         await room.localParticipant.publishTrack(track);
@@ -93,7 +102,8 @@
         }
       }
 
-      // 4️⃣ Remote participants
+      alert("STEP 8: Video attached");
+
       room.on("trackSubscribed", (track) => {
         if (track.kind === "video") {
           const el = track.attach();
@@ -104,8 +114,7 @@
       });
 
     } catch (err) {
-      console.error(err);
-      alert("Join failed. Check console.");
+      alert("ERROR: " + (err && err.message ? err.message : err));
     }
   };
 </script>
