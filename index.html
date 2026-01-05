@@ -21,9 +21,6 @@
       max-width: 320px;
       font-size: 16px;
     }
-    button {
-      cursor: pointer;
-    }
     #videos video {
       width: 100%;
       max-width: 320px;
@@ -56,32 +53,29 @@
           return;
         }
 
-        // STEP 1: Fetch token
+        // 1. Fetch token
         const res = await fetch(
           `${BACKEND_URL}/livekit/token?room=${roomName}&username=${username}`
         );
-
-        const data = await res.json();
-        const token = data.token;
+        const { token } = await res.json();
 
         if (!token) {
           alert("Failed to get token");
           return;
         }
 
-        // STEP 2: Create room
+        // 2. Connect to LiveKit
         const room = new LivekitClient.Room();
-
         await room.connect(
           "wss://legion-live-qx4x35v2.livekit.cloud",
           token
         );
 
-        // STEP 3: Enable camera + mic
+        // 3. Enable camera + mic (triggers permission popup)
         await room.localParticipant.enableCameraAndMicrophone();
 
-        // ✅ STEP 4: FIXED — LiveKit v2 compatible
-        room.localParticipant.tracks.forEach(publication => {
+        // 4. LOCAL video (LiveKit v2 – correct)
+        room.localParticipant.on("trackPublished", publication => {
           if (publication.track && publication.track.kind === "video") {
             const el = publication.track.attach();
             el.autoplay = true;
@@ -91,7 +85,7 @@
           }
         });
 
-        // STEP 5: Show remote video
+        // 5. REMOTE video
         room.on("trackSubscribed", track => {
           if (track.kind === "video") {
             const el = track.attach();
