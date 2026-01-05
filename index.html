@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>Legion Live</title>
 
-  <!-- LiveKit client -->
   <script src="https://unpkg.com/livekit-client/dist/livekit-client.umd.js"></script>
 
   <style>
@@ -71,31 +70,26 @@
           token
         );
 
-        // 3. Enable camera + mic
+        // 3. Enable camera + microphone (THIS HANDLES AUDIO)
         await room.localParticipant.enableCameraAndMicrophone();
 
-        // 4. Explicit audio track (extra-safe)
-        const audioTrack = await room.localParticipant.createMicrophoneTrack();
-        await room.localParticipant.publishTrack(audioTrack);
-
-        // 5. Local video
-        const videoTrack = await room.localParticipant.createCameraTrack();
-        await room.localParticipant.publishTrack(videoTrack);
-
-        const localEl = videoTrack.attach();
-        localEl.autoplay = true;
-        localEl.muted = true;
-        localEl.playsInline = true;
-        document.getElementById("videos").appendChild(localEl);
-
-        // 6. Remote video
-        room.on("trackSubscribed", track => {
-          if (track.kind === "video") {
-            const el = track.attach();
+        // 4. Attach LOCAL video
+        room.localParticipant.tracks.forEach(pub => {
+          if (pub.track && pub.track.kind === "video") {
+            const el = pub.track.attach();
             el.autoplay = true;
+            el.muted = true;
             el.playsInline = true;
             document.getElementById("videos").appendChild(el);
           }
+        });
+
+        // 5. Attach REMOTE video + audio
+        room.on("trackSubscribed", track => {
+          const el = track.attach();
+          el.autoplay = true;
+          el.playsInline = true;
+          document.getElementById("videos").appendChild(el);
         });
 
       } catch (err) {
