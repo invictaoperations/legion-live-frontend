@@ -87,13 +87,20 @@
 
         // 5. Attach REMOTE video
         room.on("trackSubscribed", track => {
-          if (track.kind === "video") {
-            const el = track.attach();
-            el.autoplay = true;
-            el.playsInline = true;
-            document.getElementById("videos").appendChild(el);
-          }
-        });
+  const el = track.attach();
+
+  if (track.kind === "video") {
+    el.autoplay = true;
+    el.playsInline = true;
+    document.getElementById("videos").appendChild(el);
+  }
+
+  if (track.kind === "audio") {
+    el.autoplay = true;
+    document.body.appendChild(el); // audio does NOT go in #videos
+  }
+});
+
 
       } catch (err) {
         console.error(err);
