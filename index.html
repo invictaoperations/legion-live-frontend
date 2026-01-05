@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Legion Live</title>
 
+  <!-- LiveKit client -->
   <script src="https://unpkg.com/livekit-client/dist/livekit-client.umd.js"></script>
 
   <style>
@@ -52,7 +53,7 @@
           return;
         }
 
-        // 1. Get token
+        // 1. Fetch token
         const res = await fetch(
           `${BACKEND_URL}/livekit/token?room=${roomName}&username=${username}`
         );
@@ -63,28 +64,31 @@
           return;
         }
 
-        // 2. Connect
+        // 2. Connect to LiveKit
         const room = new LivekitClient.Room();
         await room.connect(
           "wss://legion-live-qx4x35v2.livekit.cloud",
           token
         );
 
-        // 3. Enable camera + mic (ONLY once)
+        // 3. Enable camera + mic
         await room.localParticipant.enableCameraAndMicrophone();
 
-        // 4. Attach local video (LiveKit v2 correct way)
-        room.localParticipant.getTrackPublications().forEach(pub => {
-          if (pub.track && pub.track.kind === "video") {
-            const el = pub.track.attach();
-            el.autoplay = true;
-            el.muted = true;
-            el.playsInline = true;
-            document.getElementById("videos").appendChild(el);
-          }
-        });
+        // 4. Explicit audio track (extra-safe)
+        const audioTrack = await room.localParticipant.createMicrophoneTrack();
+        await room.localParticipant.publishTrack(audioTrack);
 
-        // 5. Remote video
+        // 5. Local video
+        const videoTrack = await room.localParticipant.createCameraTrack();
+        await room.localParticipant.publishTrack(videoTrack);
+
+        const localEl = videoTrack.attach();
+        localEl.autoplay = true;
+        localEl.muted = true;
+        localEl.playsInline = true;
+        document.getElementById("videos").appendChild(localEl);
+
+        // 6. Remote video
         room.on("trackSubscribed", track => {
           if (track.kind === "video") {
             const el = track.attach();
