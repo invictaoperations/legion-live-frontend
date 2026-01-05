@@ -72,20 +72,18 @@
         // STEP 2: Create room
         const room = new LivekitClient.Room();
 
-        // ✅ THE FIXED LINE (DO NOT CHANGE)
         await room.connect(
           "wss://legion-live-qx4x35v2.livekit.cloud",
           token
         );
 
-        // STEP 3: Enable camera + mic (required for Android)
+        // STEP 3: Enable camera + mic
         await room.localParticipant.enableCameraAndMicrophone();
 
-        // STEP 4: Show local video
-        room.localParticipant.videoTracks.forEach(pub => {
-          const track = pub.track;
-          if (track) {
-            const el = track.attach();
+        // ✅ STEP 4: FIXED — LiveKit v2 compatible
+        room.localParticipant.tracks.forEach(publication => {
+          if (publication.track && publication.track.kind === "video") {
+            const el = publication.track.attach();
             el.autoplay = true;
             el.muted = true;
             el.playsInline = true;
