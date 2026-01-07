@@ -1,87 +1,131 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <title>Legion Live</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://unpkg.com/livekit-client/dist/livekit-client.umd.js"></script>
 
 <style>
-body{margin:0;background:#0b0b0b;color:#fff;font-family:Arial}
+:root {
+  --bg:#0b0b0b; --card:#151515; --accent:#c62828; --text:#fff; --muted:#aaa;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial}
 header{padding:16px;background:#000;border-bottom:1px solid #222;font-size:20px}
-.container{padding:20px;max-width:900px;margin:auto}
-.card{background:#151515;border:1px solid #222;border-radius:8px;padding:16px;margin-bottom:16px}
-input,button{width:100%;padding:12px;margin:8px 0}
-button{background:#c62828;color:#fff;border:none;font-weight:bold;cursor:pointer}
+.container{padding:20px;max-width:1000px;margin:auto}
+.card{background:var(--card);border:1px solid #222;border-radius:8px;padding:16px;margin-bottom:16px}
+input,button{width:100%;padding:12px;margin:8px 0;border-radius:6px}
+input{background:#000;color:#fff;border:1px solid #333}
+button{background:var(--accent);color:#fff;border:none;font-weight:bold;cursor:pointer}
+button.secondary{background:#333}
 .hidden{display:none}
-.stream{display:flex;justify-content:space-between;align-items:center}
-.badge{background:#c62828;padding:4px 8px;font-size:12px;border-radius:4px}
+#stage{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px}
+video{width:100%;background:#000;border:1px solid #222}
+.badge{background:var(--accent);padding:4px 8px;border-radius:4px;font-size:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row button{flex:1}
 </style>
 </head>
 
 <body>
-
-<header>Legion Live</header>
+<header>Legion Live <span class="badge">LIVE</span></header>
 
 <div class="container">
 
-<div id="login" class="card">
-<h2>Login</h2>
-<input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Password">
-<button onclick="register()">Register</button>
-<button onclick="loginUser()">Login</button>
-</div>
+  <!-- AUTH -->
+  <div id="auth" class="card">
+    <h2>Login / Register</h2>
+    <input id="email" placeholder="Email" />
+    <input id="password" type="password" placeholder="Password" />
+    <div class="row">
+      <button onclick="register()">Register</button>
+      <button class="secondary" onclick="login()">Login</button>
+    </div>
+  </div>
 
-<div id="menu" class="hidden">
+  <!-- APP -->
+  <div id="app" class="hidden">
+    <div class="card">
+      <h2>Controls</h2>
+      <div class="row">
+        <button onclick="goLive()">Go Live</button>
+        <button class="secondary" onclick="watchLive()">Watch Live</button>
+        <button class="secondary" onclick="end()">End</button>
+      </div>
+    </div>
 
-<div class="card">
-<h2>Go Live</h2>
-<button onclick="window.location.href='live.html'">Start Broadcast</button>
-</div>
-
-<div class="card">
-<h2>Live Now</h2>
-<div class="stream">
-<div>
-<strong>Legion Arena</strong><br>
-<span class="badge">LIVE</span>
-</div>
-<button onclick="watch('legion-arena')">Watch</button>
-</div>
-</div>
+    <div class="card">
+      <h2>Stage</h2>
+      <div id="stage"></div>
+    </div>
+  </div>
 
 </div>
 
 <script>
-const BACKEND="https://legion-live-backend-1.onrender.com";
-const LIVEKIT_URL="wss://legion-live-qx4x35v2.livekit.cloud";
+const BACKEND = "https://legion-live-backend-1.onrender.com";
+const LIVEKIT_URL = "wss://legion-live-qx4x35v2.livekit.cloud";
+const ROOM = "legion-arena";
 
+let room = null;
+
+// ---------- AUTH ----------
 function register(){
-fetch(BACKEND+"/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},
-body:JSON.stringify({email:email.value.toLowerCase(),password:password.value})})
-.then(r=>r.json()).then(showMenu);
+  fetch(BACKEND+"/api/auth/register",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({email:email.value.toLowerCase(),password:password.value})
+  }).then(r=>r.json()).then(afterAuth);
+}
+function login(){
+  fetch(BACKEND+"/api/auth/login",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({email:email.value.toLowerCase(),password:password.value})
+  }).then(r=>r.json()).then(afterAuth);
+}
+function afterAuth(d){
+  if(!d.token){alert("Auth failed");return;}
+  document.getElementById("auth").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
 }
 
-function loginUser(){
-fetch(BACKEND+"/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},
-body:JSON.stringify({email:email.value.toLowerCase(),password:password.value})})
-.then(r=>r.json()).then(showMenu);
+// ---------- LIVE ----------
+async function goLive(){
+  if(room) return;
+  const r = await fetch(`${BACKEND}/stream/host-token?room=${ROOM}`);
+  const { token } = await r.json();
+
+  room = new LiveKit.Room();
+  room.on(LiveKit.RoomEvent.TrackSubscribed,(track)=>{
+    document.getElementById("stage").appendChild(track.attach());
+  });
+
+  await room.connect(LIVEKIT_URL, token);
+
+  const cam = await LiveKit.createLocalVideoTrack();
+  const mic = await LiveKit.createLocalAudioTrack();
+  await room.localParticipant.publishTrack(cam);
+  await room.localParticipant.publishTrack(mic);
+  document.getElementById("stage").appendChild(cam.attach());
 }
 
-function showMenu(d){
-if(!d.token){alert("Login failed");return;}
-document.getElementById("login").classList.add("hidden");
-document.getElementById("menu").classList.remove("hidden");
+async function watchLive(){
+  if(room) return;
+  const r = await fetch(`${BACKEND}/stream/viewer-token?room=${ROOM}`);
+  const { token } = await r.json();
+
+  room = new LiveKit.Room();
+  room.on(LiveKit.RoomEvent.TrackSubscribed,(track)=>{
+    document.getElementById("stage").appendChild(track.attach());
+  });
+
+  await room.connect(LIVEKIT_URL, token);
 }
 
-function watch(room){
-fetch(`${BACKEND}/stream/viewer-token?room=${room}`)
-.then(r=>r.json()).then(d=>{
-window.location.href=
-`watch.html?token=${d.token}`;
-});
+function end(){
+  if(room){ room.disconnect(); room=null; }
+  document.getElementById("stage").innerHTML="";
 }
 </script>
-
 </body>
 </html>
