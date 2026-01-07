@@ -1,254 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="utf-8">
 <title>Legion Live</title>
-
-<!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-:root{
-  --crimson:#8B0000;
-  --gold:#D4AF37;
-  --bronze:#CD7F32;
-  --bg:#0e0e0e;
-  --card:#161616;
-}
-*{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:"Instrument Sans",sans-serif;
-  background:var(--bg);
-  color:#fff;
-}
-h1,h2,h3{
-  font-family:"Cinzel",serif;
-  color:var(--gold);
-}
-button{
-  background:linear-gradient(135deg,var(--crimson),var(--bronze));
-  color:#fff;
-  border:none;
-  padding:12px 16px;
-  border-radius:8px;
-  font-weight:600;
-  cursor:pointer;
-}
-button.secondary{
-  background:#222;
-  border:1px solid var(--bronze);
-}
-header{
-  padding:14px;
-  text-align:center;
-  border-bottom:1px solid #222;
-}
-nav{
-  display:flex;
-  justify-content:space-around;
-  border-top:1px solid #222;
-  background:#111;
-  position:fixed;
-  bottom:0;
-  width:100%;
-}
-nav button{
-  flex:1;
-  border-radius:0;
-  background:none;
-}
-.view{
-  display:none;
-  padding:16px;
-  padding-bottom:80px;
-}
-.view.active{display:block}
-.card{
-  background:var(--card);
-  border:1px solid #222;
-  border-radius:12px;
-  padding:14px;
-  margin-bottom:12px;
-}
-.badge{
-  color:#000;
-  background:var(--gold);
-  padding:4px 8px;
-  border-radius:6px;
-  font-size:12px;
-  font-weight:700;
-}
-.video-thumb{
-  height:180px;
-  background:#000;
-  border-radius:10px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:#777;
-}
-.shield{
-  border:2px solid var(--gold);
-  border-radius:50%;
-  width:48px;
-  height:48px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-input{
-  width:100%;
-  padding:10px;
-  border-radius:6px;
-  border:1px solid #333;
-  background:#111;
-  color:#fff;
-  margin-bottom:10px;
-}
+body{background:#0b0b0b;color:#fff;font-family:Arial;padding:20px}
+button{background:#b71c1c;color:#fff;padding:14px;border:none;width:100%;margin:10px 0}
+input{padding:12px;width:100%;margin:8px 0}
+.section{border:1px solid #222;padding:16px;margin-bottom:20px}
 </style>
 </head>
-
 <body>
 
-<header>
-  <h1>LEGION LIVE</h1>
-  <div id="authStatus"></div>
-</header>
+<h1>Legion Live</h1>
+<p>Early Access • Creator Monetization • Live Battles</p>
 
-<!-- VIEWS -->
-
-<div id="discover" class="view active">
-  <h2>Discover</h2>
-  <button onclick="goLive()">⚔️ Go Live</button>
-
-  <div class="card">
-    <h3>🔥 Live Stream</h3>
-    <p>Host: @GladiatorX</p>
-    <span class="badge">SOLO</span>
-  </div>
-
-  <div class="card">
-    <h3>🎙 Audio Room</h3>
-    <span class="badge">AUDIO</span>
-  </div>
+<div class="section">
+<h3>Creator / Admin Login</h3>
+<input id="email" placeholder="email">
+<input id="password" type="password" placeholder="password">
+<button onclick="login()">Login</button>
 </div>
 
-<div id="arena" class="view">
-  <h2>Arena</h2>
-
-  <div class="card">
-    <h3>⚔️ Gladiator Duel</h3>
-    <p>@Maximus vs @Aurelius</p>
-    <button>Send War Cry</button>
-  </div>
-
-  <div class="card">
-    <h3>🏛 Legion Warfare</h3>
-    <p>Red Legion vs Blue Legion</p>
-    <button>Join Battle</button>
-  </div>
+<div class="section">
+<h3>Monetization Unlock</h3>
+<p>$40 one-time unlock for creator monetization.</p>
+<a href="https://paypal.me/MadMooseClothingInc" target="_blank">
+<button>Unlock via PayPal</button>
+</a>
 </div>
 
-<div id="videos" class="view">
-  <h2>Videos</h2>
-
-  <div class="card">
-    <div class="video-thumb">Short Video</div>
-    <p>❤️ 1200 · 💬 34</p>
-  </div>
-
-  <div class="card">
-    <div class="video-thumb">Full Video</div>
-    <p>❤️ 5300 · 💬 210</p>
-  </div>
+<div class="section">
+<h3>Support a Creator</h3>
+<p>$2/month or $10/year subscriptions coming live.</p>
 </div>
 
-<div id="profile" class="view">
-  <h2>Profile</h2>
-
-  <div class="card">
-    <p>Coins: <b id="coins">0</b></p>
-    <p>Rank: Recruit</p>
-    <button onclick="openWallet()">Treasury</button>
-  </div>
-
-  <div class="card">
-    <h3>Age Verification</h3>
-    <div id="ageBlock"></div>
-  </div>
-
-  <div class="card">
-    <h3>Creator Tools</h3>
-    <button class="secondary">Moderator Panel</button>
-  </div>
-</div>
-
-<!-- NAV -->
-<nav>
-  <button onclick="show('discover')">Discover</button>
-  <button onclick="show('arena')">Arena</button>
-  <button onclick="show('videos')">Videos</button>
-  <button onclick="show('profile')">Profile</button>
-</nav>
+<pre id="out"></pre>
 
 <script>
-const API = "https://YOUR_BACKEND_URL/api"; // replace later
-
-let state = {
-  loggedIn:false,
-  ageVerified:false,
-  coins:0
-};
-
-function show(id){
-  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-}
-
-function renderAuth(){
-  document.getElementById("authStatus").innerHTML =
-    state.loggedIn ? "🟢 Logged In" : "<button onclick='login()'>Login</button>";
-}
-
+const API="https://legion-live-backend-1.onrender.com/api";
 function login(){
-  // placeholder auth
-  state.loggedIn = true;
-  renderAuth();
-  renderAge();
+fetch(API+"/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({email:email.value,password:password.value})})
+.then(r=>r.json()).then(d=>out.textContent=JSON.stringify(d,null,2));
 }
-
-function renderAge(){
-  const el = document.getElementById("ageBlock");
-  if(state.ageVerified){
-    el.innerHTML = "<span class='badge'>21+ VERIFIED</span>";
-  }else{
-    el.innerHTML = `
-      <p>You must be 21+ to stream.</p>
-      <button onclick="verifyAge()">I am 21 or older</button>
-    `;
-  }
-}
-
-function verifyAge(){
-  state.ageVerified = true;
-  renderAge();
-  // POST /api/age/verify
-}
-
-function goLive(){
-  if(!state.loggedIn) return alert("Login required");
-  if(!state.ageVerified) return alert("Verify age first");
-  alert("Live stream created (provider hook ready)");
-}
-
-function openWallet(){
-  alert("Wallet: PayPal / Payoneer payouts hooked via backend");
-}
-
-renderAuth();
-renderAge();
 </script>
 
 </body>
