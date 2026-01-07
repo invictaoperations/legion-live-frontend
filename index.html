@@ -1,71 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <title>Legion Live</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-body{background:#0b0b0b;color:#fff;font-family:Arial;padding:20px}
-button{background:#b71c1c;color:#fff;padding:14px;border:none;width:100%;margin:10px 0}
-input{padding:12px;width:100%;margin:8px 0}
-.section{border:1px solid #222;padding:16px;margin-bottom:20px}
+body{margin:0;background:#0b0b0b;color:#fff;font-family:Arial}
+header{padding:16px;background:#000;border-bottom:1px solid #222;font-size:20px}
+.container{padding:20px;max-width:900px;margin:auto}
+.card{background:#151515;border:1px solid #222;border-radius:8px;padding:16px;margin-bottom:16px}
+input,button{width:100%;padding:12px;margin:8px 0}
+button{background:#c62828;color:#fff;border:none;font-weight:bold;cursor:pointer}
+.hidden{display:none}
+.stream{display:flex;justify-content:space-between;align-items:center}
+.badge{background:#c62828;padding:4px 8px;font-size:12px;border-radius:4px}
 </style>
 </head>
+
 <body>
 
-<h1>Legion Live</h1>
-<p>Early Access • Creator Monetization • Live Battles</p>
+<header>Legion Live</header>
 
-<div class="section">
-  <h3>Creator / Admin Login</h3>
-  <input id="email" placeholder="email">
-  <input id="password" type="password" placeholder="password">
-  <button onclick="register()">Register</button>
-  <button onclick="login()">Login</button>
+<div class="container">
+
+<div id="login" class="card">
+<h2>Login</h2>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+<button onclick="register()">Register</button>
+<button onclick="loginUser()">Login</button>
 </div>
 
-<div class="section">
-<h3>Monetization Unlock</h3>
-<p>$40 one-time unlock for creator monetization.</p>
-<a href="https://paypal.me/MadMooseClothingInc" target="_blank">
-<button>Unlock via PayPal</button>
-</a>
+<div id="menu" class="hidden">
+
+<div class="card">
+<h2>Go Live</h2>
+<button onclick="window.location.href='live.html'">Start Broadcast</button>
 </div>
 
-<div class="section">
-<h3>Support a Creator</h3>
-<p>$2/month or $10/year subscriptions coming live.</p>
+<div class="card">
+<h2>Live Now</h2>
+<div class="stream">
+<div>
+<strong>Legion Arena</strong><br>
+<span class="badge">LIVE</span>
+</div>
+<button onclick="watch('legion-arena')">Watch</button>
+</div>
 </div>
 
-<pre id="out"></pre>
+</div>
 
 <script>
-const API = "https://legion-live-backend-1.onrender.com/api";
+const BACKEND="https://legion-live-backend-1.onrender.com";
+const LIVEKIT_URL="wss://legion-live-qx4x35v2.livekit.cloud";
 
-function register() {
-  fetch(API + "/auth/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: email.value.trim().toLowerCase(),
-      password: password.value
-    })
-  })
-  .then(r => r.json())
-  .then(d => out.textContent = JSON.stringify(d, null, 2));
+function register(){
+fetch(BACKEND+"/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({email:email.value.toLowerCase(),password:password.value})})
+.then(r=>r.json()).then(showMenu);
 }
 
-function login() {
-  fetch(API + "/auth/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: email.value.trim().toLowerCase(),
-      password: password.value
-    })
-  })
-  .then(r => r.json())
-  .then(d => out.textContent = JSON.stringify(d, null, 2));
+function loginUser(){
+fetch(BACKEND+"/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({email:email.value.toLowerCase(),password:password.value})})
+.then(r=>r.json()).then(showMenu);
+}
+
+function showMenu(d){
+if(!d.token){alert("Login failed");return;}
+document.getElementById("login").classList.add("hidden");
+document.getElementById("menu").classList.remove("hidden");
+}
+
+function watch(room){
+fetch(`${BACKEND}/stream/viewer-token?room=${room}`)
+.then(r=>r.json()).then(d=>{
+window.location.href=
+`watch.html?token=${d.token}`;
+});
 }
 </script>
 
