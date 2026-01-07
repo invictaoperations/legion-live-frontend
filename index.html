@@ -17,10 +17,11 @@ input{padding:12px;width:100%;margin:8px 0}
 <p>Early Access • Creator Monetization • Live Battles</p>
 
 <div class="section">
-<h3>Creator / Admin Login</h3>
-<input id="email" placeholder="email">
-<input id="password" type="password" placeholder="password">
-<button onclick="login()">Login</button>
+  <h3>Creator / Admin Login</h3>
+  <input id="email" placeholder="email">
+  <input id="password" type="password" placeholder="password">
+  <button onclick="register()">Register</button>
+  <button onclick="login()">Login</button>
 </div>
 
 <div class="section">
@@ -39,11 +40,32 @@ input{padding:12px;width:100%;margin:8px 0}
 <pre id="out"></pre>
 
 <script>
-const API="https://legion-live-backend-1.onrender.com/api";
-function login(){
-fetch(API+"/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},
-body:JSON.stringify({email:email.value,password:password.value})})
-.then(r=>r.json()).then(d=>out.textContent=JSON.stringify(d,null,2));
+const API = "https://legion-live-backend-1.onrender.com/api";
+
+function register() {
+  fetch(API + "/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: email.value.trim().toLowerCase(),
+      password: password.value
+    })
+  })
+  .then(r => r.json())
+  .then(d => out.textContent = JSON.stringify(d, null, 2));
+}
+
+function login() {
+  fetch(API + "/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: email.value.trim().toLowerCase(),
+      password: password.value
+    })
+  })
+  .then(r => r.json())
+  .then(d => out.textContent = JSON.stringify(d, null, 2));
 }
 </script>
 
