@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Legion Live — Broadcast</title>
+<script src="https://unpkg.com/livekit-client/dist/livekit-client.umd.js"></script>
+<style>
+body{margin:0;background:#000;color:#fff;font-family:Arial}
+header{padding:14px;background:#111;border-bottom:1px solid #222}
+#controls{padding:10px;background:#111}
+button{padding:12px;background:#c62828;border:none;color:#fff;font-weight:bold}
+#stage{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;padding:10px}
+video{width:100%;background:#000}
+</style>
+</head>
+
+<body>
+
+<header>Legion Live — Broadcasting</header>
+
+<div id="controls">
+<button onclick="startLive()">Go Live</button>
+<button onclick="leave()">End</button>
+</div>
+
+<div id="stage"></div>
+
+<script>
+const BACKEND="https://legion-live-backend-1.onrender.com";
+const LIVEKIT_URL="wss://legion-live-qx4x35v2.livekit.cloud";
+const ROOM="legion-arena";
+let room;
+
+async function startLive(){
+const r=await fetch(`${BACKEND}/stream/host-token?room=${ROOM}`);
+const d=await r.json();
+
+room=new LiveKit.Room();
+
+room.on(LiveKit.RoomEvent.TrackSubscribed,(track)=>{
+document.getElementById("stage").appendChild(track.attach());
+});
+
+await room.connect(LIVEKIT_URL,d.token);
+
+const cam=await LiveKit.createLocalVideoTrack();
+const mic=await LiveKit.createLocalAudioTrack();
+
+await room.localParticipant.publishTrack(cam);
+await room.localParticipant.publishTrack(mic);
+
+document.getElementById("stage").appendChild(cam.attach());
+}
+
+function leave(){
+if(room){room.disconnect();document.getElementById("stage").innerHTML="";}
+}
+</script>
+
+</body>
+</html>
