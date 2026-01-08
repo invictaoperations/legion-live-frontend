@@ -18,61 +18,46 @@ header{
   padding:14px;background:#000;border-bottom:1px solid #222
 }
 header .coins{color:#ffd54f;font-weight:bold}
-#app{padding-bottom:70px}
 .section{display:none;padding:14px}
 .section.active{display:block}
 .card{
   background:var(--panel);border:1px solid #222;
   border-radius:10px;padding:12px;margin-bottom:14px
 }
-.stream-grid{
-  display:grid;grid-template-columns:repeat(2,1fr);gap:10px
-}
-.stream{
-  background:#000;border-radius:8px;overflow:hidden;
-  border:1px solid #222
-}
-.stream img{width:100%;height:120px;object-fit:cover}
-.stream .info{padding:8px}
-.stream .live{color:#ff5252;font-size:12px}
 button{
   width:100%;padding:12px;margin-top:8px;
   background:var(--accent);border:none;border-radius:8px;
   color:#fff;font-weight:bold
 }
+#stage video{width:100%;border-radius:8px;margin-bottom:8px}
 nav{
   position:fixed;bottom:0;left:0;right:0;
   background:#000;border-top:1px solid #222;
   display:flex
 }
 nav div{
-  flex:1;text-align:center;padding:10px;color:var(--muted);
-  font-size:12px
+  flex:1;text-align:center;padding:10px;color:var(--muted)
 }
 nav div.active{color:#fff}
-#stage video{width:100%;margin-bottom:8px;border-radius:8px}
 input{
   width:100%;padding:12px;margin-bottom:8px;
   background:#000;border:1px solid #333;color:#fff;border-radius:8px
 }
-
-/* GIFT UI */
 #giftModal{
   display:none;position:fixed;bottom:0;left:0;right:0;
   background:#111;border-top:2px solid #c62828;
   padding:12px;z-index:9999
 }
 #giftModal .grid{
-  display:grid;grid-template-columns:repeat(4,1fr);
-  gap:10px;text-align:center
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px
 }
 #giftModal .grid div{
-  padding:10px;background:#000;border-radius:8px;cursor:pointer
+  background:#000;padding:10px;border-radius:8px;text-align:center
 }
 #giftOverlay{
   position:fixed;top:30%;left:50%;
   transform:translateX(-50%);
-  font-size:42px;display:none;
+  font-size:40px;display:none;
   z-index:10000;color:white;
   text-shadow:0 0 10px black
 }
@@ -86,10 +71,7 @@ input{
   <div class="coins" id="coinDisplay">🪙 0</div>
 </header>
 
-<div id="app">
-
-<!-- AUTH -->
-<div id="auth" class="section active">
+<div class="section active" id="auth">
   <div class="card">
     <h3>Login / Register</h3>
     <input id="email" placeholder="Email">
@@ -99,39 +81,18 @@ input{
   </div>
 </div>
 
-<!-- DISCOVER -->
-<div id="discover" class="section">
-  <div class="card"><h3>🔥 Featured</h3>
-    <div class="stream-grid">
-      <div class="stream" onclick="watchLive()">
-        <img src="https://picsum.photos/400/300">
-        <div class="info">
-          <div class="live">LIVE</div>
-          Legion Arena
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- LIVE -->
-<div id="live" class="section">
+<div class="section" id="live">
   <div class="card">
-    <h3>Go Live</h3>
-    <button onclick="goLive()">Start Stream</button>
+    <button onclick="goLive()">Go Live</button>
     <button onclick="openGifts()">🎁 Send Gift</button>
   </div>
   <div id="stage"></div>
 </div>
 
-</div>
-
 <nav>
-  <div onclick="tab('discover')" class="active">Discover</div>
-  <div onclick="tab('live')">Live</div>
+  <div class="active" onclick="show('live')">Live</div>
 </nav>
 
-<!-- GIFT MODAL -->
 <div id="giftModal">
   <div class="grid">
     <div onclick="sendGift('rose',10)">🌹<br>10</div>
@@ -148,11 +109,9 @@ input{
 const BACKEND="https://legion-live-backend-1.onrender.com";
 const LIVEKIT_URL="wss://legion-live-qx4x35v2.livekit.cloud";
 const ROOM="legion-arena";
+let room=null, authToken=null;
 
-let room=null;
-let authToken=null;
-
-function tab(id){
+function show(id){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
@@ -172,27 +131,23 @@ body:JSON.stringify({email:email.value,password:password.value})})
 function afterAuth(d){
 if(!d.token){alert("Auth failed");return;}
 authToken=d.token;
-tab('discover');
-
-const coins = d.coins ?? d.balance ?? d.user?.coins ?? d.user?.balance ?? 0;
-document.getElementById("coinDisplay").textContent=`🪙 ${coins}`;
+document.getElementById("coinDisplay").innerText=`🪙 ${d.coins||0}`;
+show('live');
 }
 
 async function goLive(){
-const r=await fetch(`${BACKEND}/stream/host-token?room=${ROOM}`);
+const r=await fetch(`${BACKEND}/api/stream/host-token?room=${ROOM}`);
 const d=await r.json();
-
 room=new LiveKit.Room();
 
-room.on(LiveKit.RoomEvent.TrackSubscribed,track=>{
-const el=track.attach();
-el.playsInline=true;
+room.on(LiveKit.RoomEvent.TrackSubscribed,t=>{
+const el=t.attach();el.playsInline=true;
 document.getElementById("stage").appendChild(el);
 });
 
-room.on(LiveKit.RoomEvent.DataReceived,payload=>{
-const msg=JSON.parse(new TextDecoder().decode(payload));
-if(msg.type==="gift") showGift(msg);
+room.on(LiveKit.RoomEvent.DataReceived,p=>{
+const m=JSON.parse(new TextDecoder().decode(p));
+if(m.type==="gift") showGift(m);
 });
 
 await room.connect(LIVEKIT_URL,d.token);
@@ -200,41 +155,18 @@ await room.connect(LIVEKIT_URL,d.token);
 const cam=await LiveKit.createLocalVideoTrack();
 const mic=await LiveKit.createLocalAudioTrack();
 
-const videoEl=cam.attach();
-videoEl.muted=true;
-videoEl.playsInline=true;
-document.getElementById("stage").appendChild(videoEl);
+const v=cam.attach();v.muted=true;v.playsInline=true;
+document.getElementById("stage").appendChild(v);
 
 await room.localParticipant.publishTrack(cam);
 await room.localParticipant.publishTrack(mic);
 }
 
-async function watchLive(){
-const r=await fetch(`${BACKEND}/stream/viewer-token?room=${ROOM}`);
-const d=await r.json();
-
-room=new LiveKit.Room();
-
-room.on(LiveKit.RoomEvent.TrackSubscribed,track=>{
-const el=track.attach();
-el.playsInline=true;
-document.getElementById("stage").appendChild(el);
-});
-
-room.on(LiveKit.RoomEvent.DataReceived,payload=>{
-const msg=JSON.parse(new TextDecoder().decode(payload));
-if(msg.type==="gift") showGift(msg);
-});
-
-tab('live');
-await room.connect(LIVEKIT_URL,d.token);
-}
-
-function openGifts(){document.getElementById("giftModal").style.display="block";}
-function closeGifts(){document.getElementById("giftModal").style.display="none";}
+function openGifts(){giftModal.style.display="block"}
+function closeGifts(){giftModal.style.display="none"}
 
 async function sendGift(giftId,cost){
-const res=await fetch(BACKEND+"/api/gifts/send",{
+const r=await fetch(BACKEND+"/api/gifts/send",{
 method:"POST",
 headers:{
 "Content-Type":"application/json",
@@ -242,27 +174,21 @@ headers:{
 },
 body:JSON.stringify({giftId,cost,room:ROOM})
 });
-const d=await res.json();
+const d=await r.json();
 if(!d.success){alert("Not enough coins");return;}
-
-const coinEl=document.getElementById("coinDisplay");
-const current=parseInt(coinEl.innerText.replace(/\D/g,""));
-coinEl.innerText=`🪙 ${current-cost}`;
-
+coinDisplay.innerText=`🪙 ${parseInt(coinDisplay.innerText.replace(/\D/g,''))-cost}`;
 room.localParticipant.publishData(
 JSON.stringify({type:"gift",giftId,sender:d.sender}),
 {reliable:true}
 );
-
 closeGifts();
 }
 
 function showGift({giftId,sender}){
 const map={rose:"🌹",crown:"👑",lion:"🦁",dragon:"🐉"};
-const overlay=document.getElementById("giftOverlay");
-overlay.innerText=`${sender} sent ${map[giftId]}`;
-overlay.style.display="block";
-setTimeout(()=>overlay.style.display="none",2500);
+giftOverlay.innerText=`${sender} sent ${map[giftId]}`;
+giftOverlay.style.display="block";
+setTimeout(()=>giftOverlay.style.display="none",2500);
 }
 </script>
 
