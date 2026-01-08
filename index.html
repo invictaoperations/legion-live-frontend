@@ -2,46 +2,113 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Legion Live</title>
-
-<!-- PWA -->
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#000000">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 
 <!-- LiveKit -->
 <script src="https://unpkg.com/livekit-client/dist/livekit-client.umd.js"></script>
 
 <style>
 :root{
-  --bg:#0b0b0b;--panel:#141414;--accent:#c62828;--gold:#d4af37;--text:#fff;--muted:#aaa;
+  --bg:#0b0b0b;
+  --panel:#151515;
+  --accent:#c62828;
+  --gold:#d4af37;
+  --muted:#999;
+  --text:#fff;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Arial}
-header{position:fixed;top:0;left:0;right:0;height:56px;background:#000;border-bottom:1px solid #222;
-display:flex;align-items:center;justify-content:space-between;padding:0 14px;z-index:10}
-header .coins{color:var(--gold);font-weight:700}
-main{padding-top:56px;padding-bottom:72px}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,Arial;
+}
+header{
+  position:fixed;
+  top:0;left:0;right:0;
+  height:56px;
+  background:#000;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 14px;
+  border-bottom:1px solid #222;
+  z-index:10;
+}
+header .coins{color:var(--gold);font-weight:bold}
+main{padding-top:56px;padding-bottom:70px}
 .section{display:none;padding:12px}
 .section.active{display:block}
-.card{background:var(--panel);border:1px solid #222;border-radius:12px;padding:12px;margin-bottom:12px}
-button{width:100%;padding:12px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:700}
-button.secondary{background:#333}
-input{width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#000;color:#fff;margin-bottom:8px}
-
-#stage{width:100%;aspect-ratio:9/16;background:#000;border-radius:14px;overflow:hidden}
-#stage video{width:100%;height:100%;object-fit:cover}
-
-nav{position:fixed;bottom:0;left:0;right:0;height:64px;background:#000;border-top:1px solid #222;display:flex}
-nav div{flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.card{
+  background:var(--panel);
+  border-radius:12px;
+  padding:14px;
+  margin-bottom:12px;
+}
+button{
+  width:100%;
+  padding:14px;
+  margin-top:10px;
+  background:var(--accent);
+  border:none;
+  border-radius:10px;
+  color:#fff;
+  font-size:16px;
+  font-weight:600;
+}
+input{
+  width:100%;
+  padding:14px;
+  margin-bottom:10px;
+  background:#000;
+  border:1px solid #333;
+  border-radius:10px;
+  color:#fff;
+  font-size:16px;
+}
+#stage{
+  width:100%;
+  background:#000;
+  border-radius:12px;
+  overflow:hidden;
+}
+#stage video{
+  width:100%;
+  height:auto;
+  display:block;
+  background:#000;
+}
+nav{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  height:60px;
+  background:#000;
+  border-top:1px solid #222;
+  display:flex;
+}
+nav div{
+  flex:1;
+  text-align:center;
+  padding-top:8px;
+  font-size:12px;
+  color:var(--muted);
+}
 nav div.active{color:#fff}
 
-.gift-tray{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.gift{background:#1b1b1b;border:1px solid #222;border-radius:10px;padding:10px;text-align:center}
-
-@keyframes floatUp{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-160px)}}
-.gift-float{position:fixed;left:50%;bottom:96px;font-size:36px;animation:floatUp 2s ease-out forwards;z-index:999}
+/* Gift animation */
+@keyframes floatUp{
+  from{opacity:1;transform:translate(-50%,0)}
+  to{opacity:0;transform:translate(-50%,-160px)}
+}
+.gift{
+  position:fixed;
+  bottom:80px;
+  left:50%;
+  font-size:40px;
+  animation:floatUp 2s ease-out forwards;
+  z-index:999;
+}
 </style>
 </head>
 
@@ -53,148 +120,163 @@ nav div.active{color:#fff}
 </header>
 
 <main>
-  <!-- AUTH -->
-  <section id="auth" class="section active">
-    <div class="card">
-      <h3>Login / Register</h3>
-      <input id="email" placeholder="Email">
-      <input id="password" type="password" placeholder="Password">
-      <button onclick="login()">Login</button>
-      <button class="secondary" onclick="register()">Register</button>
-    </div>
-  </section>
 
-  <!-- DISCOVER -->
-  <section id="discover" class="section">
-    <div class="card">
-      <h3>Featured</h3>
-      <button onclick="watchLive()">Watch Legion Arena</button>
-    </div>
-  </section>
+<!-- AUTH -->
+<section id="auth" class="section active">
+  <div class="card">
+    <h3>Login / Register</h3>
+    <input id="email" placeholder="Email" />
+    <input id="password" type="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+    <button onclick="register()">Register</button>
+  </div>
+</section>
 
-  <!-- LIVE -->
-  <section id="live" class="section">
-    <div class="card">
-      <h3>Go Live</h3>
-      <button onclick="startLive()">Start Stream</button>
-    </div>
-    <div id="stage"></div>
-    <div class="card">
-      <h3>Gifts</h3>
-      <div class="gift-tray">
-        <div class="gift" onclick="sendGift(10,'🌹')">🌹 10</div>
-        <div class="gift" onclick="sendGift(50,'🔥')">🔥 50</div>
-        <div class="gift" onclick="sendGift(100,'🎁')">🎁 100</div>
-        <div class="gift" onclick="sendGift(500,'👑')">👑 500</div>
-      </div>
-    </div>
-  </section>
+<!-- DISCOVER -->
+<section id="discover" class="section">
+  <div class="card">
+    <h3>🔥 Featured Live</h3>
+    <button onclick="watchLive()">Watch Legion Arena</button>
+  </div>
+</section>
 
-  <!-- PROFILE -->
-  <section id="profile" class="section">
-    <div class="card">
-      <h3>Profile</h3>
-      <div id="profileEmail"></div>
-    </div>
-  </section>
+<!-- LIVE -->
+<section id="live" class="section">
+  <div class="card">
+    <h3>Go Live</h3>
+    <button onclick="startBroadcast()">Start Stream</button>
+    <button onclick="sendGift()">Send Gift (100 🪙)</button>
+  </div>
+  <div id="stage"></div>
+</section>
+
+<!-- PROFILE -->
+<section id="profile" class="section">
+  <div class="card">
+    <h3>Profile</h3>
+    <p id="profileEmail"></p>
+  </div>
+</section>
+
 </main>
 
 <nav>
-  <div class="active" onclick="tab('discover')">Discover</div>
-  <div onclick="tab('live')">Live</div>
-  <div onclick="tab('profile')">Profile</div>
+  <div onclick="switchTab('discover')" class="active">Discover</div>
+  <div onclick="switchTab('live')">Live</div>
+  <div onclick="switchTab('profile')">Profile</div>
 </nav>
 
 <script>
+/* CONFIG */
 const BACKEND="https://legion-live-backend-1.onrender.com";
 const LIVEKIT_URL="wss://legion-live-qx4x35v2.livekit.cloud";
 const ROOM="legion-arena";
-let room=null;
 
-function tab(id){
+let room;
+
+/* NAV */
+function switchTab(id){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('nav div').forEach(n=>n.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  [...document.querySelectorAll('nav div')].find(n=>n.textContent.toLowerCase().includes(id)).classList.add('active');
+  [...document.querySelectorAll('nav div')]
+    .find(n=>n.textContent.toLowerCase().includes(id))
+    .classList.add('active');
 }
 
+/* AUTH */
 function register(){
-  fetch(BACKEND+"/api/auth/register",{method:"POST",headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({email:email.value,password:password.value})}).then(r=>r.json()).then(afterAuth);
+  fetch(BACKEND+"/api/auth/register",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({email:email.value,password:password.value})
+  }).then(r=>r.json()).then(afterAuth);
 }
 function login(){
-  fetch(BACKEND+"/api/auth/login",{method:"POST",headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({email:email.value,password:password.value})}).then(r=>r.json()).then(afterAuth);
+  fetch(BACKEND+"/api/auth/login",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({email:email.value,password:password.value})
+  }).then(r=>r.json()).then(afterAuth);
 }
 function afterAuth(d){
-  if(!d.token) return alert("Auth failed");
+  if(!d.token){alert("Auth failed");return;}
   localStorage.token=d.token;
-  document.getElementById("auth").classList.remove("active");
-  tab("discover");
-  document.getElementById("coinDisplay").innerText="🪙 "+(d.coins||0);
-  document.getElementById("profileEmail").innerText=email.value;
+  coinDisplay.innerText="🪙 "+(d.coins||0);
+  profileEmail.innerText=email.value;
+  switchTab("discover");
+  auth.classList.remove("active");
 }
 
-async function ensurePermissions(){
-  const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:true});
-  s.getTracks().forEach(t=>t.stop());
-}
-
-async function startLive(){
+/* START BROADCAST — MOBILE SAFE */
+async function startBroadcast(){
   try{
-    await ensurePermissions();
+    // REQUIRED for Android Chrome
+    const perm = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    perm.getTracks().forEach(t=>t.stop());
 
-    const vTrack=await LiveKit.createLocalVideoTrack({facingMode:"user"});
-    const aTrack=await LiveKit.createLocalAudioTrack();
+    const tokenRes = await fetch(`${BACKEND}/api/stream/host-token?room=${ROOM}`);
+    const tokenData = await tokenRes.json();
 
-    const r=await fetch(`${BACKEND}/api/stream/host-token?room=${ROOM}`);
-    const d=await r.json();
+    const videoTrack = await LiveKit.createLocalVideoTrack({facingMode:"user"});
+    const audioTrack = await LiveKit.createLocalAudioTrack();
 
-    room=new LiveKit.Room();
-    room.on(LiveKit.RoomEvent.TrackSubscribed,t=>{
-      document.getElementById("stage").appendChild(t.attach());
-    });
+    room = new LiveKit.Room();
+    await room.connect(LIVEKIT_URL, tokenData.token);
 
-    await room.connect(LIVEKIT_URL,d.token);
-    await room.localParticipant.publishTrack(vTrack);
-    await room.localParticipant.publishTrack(aTrack);
+    await room.localParticipant.publishTrack(videoTrack);
+    await room.localParticipant.publishTrack(audioTrack);
 
-    const el=vTrack.attach();
-    el.muted=true; el.playsInline=true; el.autoplay=true;
-    document.getElementById("stage").innerHTML="";
-    document.getElementById("stage").appendChild(el);
-    tab("live");
-  }catch(e){alert("Camera/Mic blocked. Enable permissions and reload.");}
+    const videoEl = videoTrack.attach();
+    videoEl.muted=true;
+    videoEl.autoplay=true;
+    videoEl.playsInline=true;
+
+    stage.innerHTML="";
+    stage.appendChild(videoEl);
+
+  }catch(e){
+    alert("Camera/Mic blocked. Enable permissions and reload.");
+    console.error(e);
+  }
 }
 
+/* WATCH */
 async function watchLive(){
-  const r=await fetch(`${BACKEND}/api/stream/viewer-token?room=${ROOM}`);
-  const d=await r.json();
-  room=new LiveKit.Room();
-  room.on(LiveKit.RoomEvent.TrackSubscribed,t=>{
-    document.getElementById("stage").appendChild(t.attach());
+  const r = await fetch(`${BACKEND}/api/stream/viewer-token?room=${ROOM}`);
+  const d = await r.json();
+
+  room = new LiveKit.Room();
+  room.on(LiveKit.RoomEvent.TrackSubscribed, t=>{
+    stage.appendChild(t.attach());
   });
+
+  switchTab("live");
+  stage.innerHTML="";
   await room.connect(LIVEKIT_URL,d.token);
-  tab("live");
 }
 
-async function sendGift(cost,emoji){
-  const r=await fetch(`${BACKEND}/api/gifts/send`,{
+/* GIFTS */
+async function sendGift(){
+  const r = await fetch(`${BACKEND}/api/gifts/send`,{
     method:"POST",
-    headers:{'Content-Type':'application/json','Authorization':localStorage.token},
-    body:JSON.stringify({cost,room:ROOM})
+    headers:{
+      "Content-Type":"application/json",
+      "Authorization":localStorage.token
+    },
+    body:JSON.stringify({giftId:"rose",cost:100,room:ROOM})
   });
-  const d=await r.json();
-  if(!d.success) return alert("Not enough coins");
-  document.getElementById("coinDisplay").innerText="🪙 "+d.balance;
-  const g=document.createElement("div");
-  g.className="gift-float"; g.innerText=emoji;
-  document.body.appendChild(g); setTimeout(()=>g.remove(),2000);
-}
+  const d = await r.json();
+  if(!d.success){alert("Not enough coins");return;}
+  coinDisplay.innerText="🪙 "+d.balance;
 
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('/service-worker.js'));
+  const g=document.createElement("div");
+  g.className="gift";
+  g.innerText="🎁";
+  document.body.appendChild(g);
+  setTimeout(()=>g.remove(),2000);
 }
 </script>
+
 </body>
 </html>
