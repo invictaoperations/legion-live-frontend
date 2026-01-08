@@ -5,103 +5,28 @@
 <title>Legion Live</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<!-- LiveKit -->
 <script src="https://unpkg.com/livekit-client/dist/livekit-client.umd.js"></script>
 
 <style>
 :root{
-  --bg:#0b0b0b;
-  --panel:#151515;
-  --accent:#c62828;
-  --gold:#d4af37;
-  --muted:#aaa;
-  --text:#fff;
+  --bg:#0b0b0b;--panel:#151515;--accent:#c62828;
+  --gold:#d4af37;--muted:#aaa;--text:#fff;
 }
 *{box-sizing:border-box}
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:Arial,Helvetica,sans-serif;
-}
-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:14px;
-  background:#000;
-  border-bottom:1px solid #222;
-}
-header .coins{
-  color:var(--gold);
-  font-weight:bold;
-}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial}
+header{display:flex;justify-content:space-between;padding:14px;background:#000;border-bottom:1px solid #222}
+header .coins{color:var(--gold);font-weight:bold}
 .section{display:none;padding:14px}
 .section.active{display:block}
-.card{
-  background:var(--panel);
-  border:1px solid #222;
-  border-radius:10px;
-  padding:12px;
-  margin-bottom:14px;
-}
-button{
-  width:100%;
-  padding:12px;
-  margin-top:8px;
-  background:var(--accent);
-  border:none;
-  border-radius:8px;
-  color:#fff;
-  font-weight:bold;
-}
-input{
-  width:100%;
-  padding:12px;
-  margin-bottom:8px;
-  background:#000;
-  border:1px solid #333;
-  color:#fff;
-  border-radius:8px;
-}
-#stage video{
-  width:100%;
-  border-radius:8px;
-  margin-bottom:8px;
-}
-
-/* Bottom nav */
-nav{
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  display:flex;
-  background:#000;
-  border-top:1px solid #222;
-}
-nav div{
-  flex:1;
-  text-align:center;
-  padding:10px;
-  font-size:12px;
-  color:var(--muted);
-}
+.card{background:var(--panel);border:1px solid #222;border-radius:10px;padding:12px;margin-bottom:14px}
+button{width:100%;padding:12px;margin-top:8px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-weight:bold}
+input{width:100%;padding:12px;margin-bottom:8px;background:#000;border:1px solid #333;color:#fff;border-radius:8px}
+#stage video{width:100%;border-radius:8px;margin-bottom:8px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#000;border-top:1px solid #222}
+nav div{flex:1;text-align:center;padding:10px;font-size:12px;color:var(--muted)}
 nav div.active{color:#fff}
-
-/* Gift animation */
-@keyframes floatUp{
-  from{opacity:1;transform:translate(-50%,0)}
-  to{opacity:0;transform:translate(-50%,-140px)}
-}
-.gift-float{
-  position:fixed;
-  bottom:90px;
-  left:50%;
-  font-size:36px;
-  animation:floatUp 2s ease-out forwards;
-  z-index:999;
-}
+@keyframes floatUp{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-140px)}}
+.gift-float{position:fixed;bottom:90px;left:50%;font-size:36px;animation:floatUp 2s ease-out forwards;z-index:999}
 </style>
 </head>
 
@@ -112,36 +37,32 @@ nav div.active{color:#fff}
   <div class="coins" id="coinDisplay">🪙 0</div>
 </header>
 
-<!-- AUTH -->
 <div id="auth" class="section active">
   <div class="card">
     <h3>Login / Register</h3>
     <input id="email" placeholder="Email">
     <input id="password" type="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-    <button onclick="register()">Register</button>
+    <button id="loginBtn">Login</button>
+    <button id="registerBtn">Register</button>
   </div>
 </div>
 
-<!-- DISCOVER -->
 <div id="discover" class="section">
   <div class="card">
     <h3>🔥 Featured Live</h3>
-    <button onclick="watchLive()">Watch Legion Arena</button>
+    <button id="watchBtn">Watch Legion Arena</button>
   </div>
 </div>
 
-<!-- LIVE -->
 <div id="live" class="section">
   <div class="card">
     <h3>Go Live</h3>
-    <button onclick="requestMedia()">Start Stream</button>
-    <button onclick="sendGift()">Send Test Gift (100🪙)</button>
+    <button id="goLiveBtn">Start Stream</button>
+    <button id="giftBtn">Send Test Gift (100🪙)</button>
   </div>
   <div id="stage"></div>
 </div>
 
-<!-- PROFILE -->
 <div id="profile" class="section">
   <div class="card">
     <h3>Profile</h3>
@@ -150,154 +71,98 @@ nav div.active{color:#fff}
 </div>
 
 <nav>
-  <div onclick="tab('discover')" class="active">Discover</div>
-  <div onclick="tab('live')">Live</div>
-  <div onclick="tab('profile')">Profile</div>
+  <div data-tab="discover" class="active">Discover</div>
+  <div data-tab="live">Live</div>
+  <div data-tab="profile">Profile</div>
 </nav>
 
 <script>
-/* ---------------- CONFIG ---------------- */
-const BACKEND = "https://legion-live-backend-1.onrender.com";
-const LIVEKIT_URL = "wss://legion-live-qx4x35v2.livekit.cloud";
-const ROOM = "legion-arena";
+const BACKEND="https://legion-live-backend-1.onrender.com";
+const LIVEKIT_URL="wss://legion-live-qx4x35v2.livekit.cloud";
+const ROOM="legion-arena";
 let room;
 
-/* ---------------- NAV ---------------- */
+/* NAV */
+document.querySelectorAll("nav div").forEach(n=>{
+  n.onclick=()=>tab(n.dataset.tab);
+});
 function tab(id){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('nav div').forEach(n=>n.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  [...document.querySelectorAll('nav div')].find(n=>n.textContent.toLowerCase().includes(id)).classList.add('active');
+  document.querySelector(`nav div[data-tab="${id}"]`).classList.add('active');
 }
 
-/* ---------------- AUTH ---------------- */
-function register(){
-  fetch(BACKEND+"/api/auth/register",{
+/* AUTH */
+loginBtn.onclick=()=>auth("login");
+registerBtn.onclick=()=>auth("register");
+function auth(type){
+  fetch(`${BACKEND}/api/auth/${type}`,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({email:email.value,password:password.value})
-  }).then(r=>r.json()).then(afterAuth);
-}
-function login(){
-  fetch(BACKEND+"/api/auth/login",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({email:email.value,password:password.value})
-  }).then(r=>r.json()).then(afterAuth);
-}
-function afterAuth(d){
-  if(!d.token){alert("Auth failed");return;}
-  localStorage.token = d.token;
-  document.getElementById("auth").classList.remove("active");
-  tab("discover");
-  document.getElementById("coinDisplay").innerText = "🪙 " + (d.coins || 0);
-  document.getElementById("profileEmail").innerText = email.value;
-}
-
-/* ---------------- LIVE (MOBILE-SAFE, PRODUCTION) ---------------- */
-async function requestMedia(){
-  try{
-    // This MUST be alone and first
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" },
-      audio: true
-    });
-
-    // Stop tracks immediately (permission stays granted)
-    stream.getTracks().forEach(t => t.stop());
-
-    // NOW go live
-    await goLive();
-  }catch(err){
-    console.error(err);
-    alert("Camera/Microphone permission denied by browser");
-  }
-}
-
-  async function goLive(){
-  try {
-    // 1️⃣ Force permission immediately (required on mobile)
-    const permissionStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" },
-      audio: true
-    });
-    permissionStream.getTracks().forEach(t => t.stop());
-
-    // 2️⃣ Create LiveKit tracks BEFORE connect
-    const videoTrack = await LiveKit.createLocalVideoTrack({
-      facingMode: "user"
-    });
-    const audioTrack = await LiveKit.createLocalAudioTrack();
-
-    // 3️⃣ Fetch token
-    const r = await fetch(`${BACKEND}/api/stream/host-token?room=${ROOM}`);
-    const d = await r.json();
-
-    // 4️⃣ Connect
-    room = new LiveKit.Room();
-    room.on(LiveKit.RoomEvent.TrackSubscribed, track => {
-      document.getElementById("stage").appendChild(track.attach());
-    });
-
-    await room.connect(LIVEKIT_URL, d.token);
-
-    // 5️⃣ Publish tracks
-    await room.localParticipant.publishTrack(videoTrack);
-    await room.localParticipant.publishTrack(audioTrack);
-
-    // 6️⃣ Attach local video correctly for mobile
-    const videoEl = videoTrack.attach();
-    videoEl.muted = true;        // REQUIRED
-    videoEl.playsInline = true;  // REQUIRED
-    videoEl.autoplay = true;     // REQUIRED
-    document.getElementById("stage").appendChild(videoEl);
-
-  } catch (err) {
-    console.error(err);
-    alert(
-      "Camera/Mic blocked.\n\n" +
-      "Tap 🔒 in the address bar → Site settings → Allow Camera & Mic → Reload."
-    );
-  }
-}
-
-/* ---------------- VIEWER ---------------- */
-async function watchLive(){
-  const r = await fetch(`${BACKEND}/api/stream/viewer-token?room=${ROOM}`);
-  const d = await r.json();
-  room = new LiveKit.Room();
-  room.on(LiveKit.RoomEvent.TrackSubscribed,t=>{
-    document.getElementById("stage").appendChild(t.attach());
+  }).then(r=>r.json()).then(d=>{
+    if(!d.token)return alert("Auth failed");
+    localStorage.token=d.token;
+    auth.classList?.remove?.("active");
+    tab("discover");
+    coinDisplay.textContent=`🪙 ${d.coins||0}`;
+    profileEmail.textContent=email.value;
   });
+}
+
+/* CAMERA PERMISSION (ANDROID SAFE) */
+goLiveBtn.addEventListener("click", async ()=>{
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:true});
+    s.getTracks().forEach(t=>t.stop());
+    startStream();
+  }catch(e){
+    alert("Camera/Mic blocked.\nTap 🔒 → Allow → Reload");
+  }
+});
+
+/* LIVEKIT */
+async function startStream(){
+  const r=await fetch(`${BACKEND}/api/stream/host-token?room=${ROOM}`);
+  const d=await r.json();
+  room=new LiveKit.Room();
+  room.on(LiveKit.RoomEvent.TrackSubscribed,t=>stage.appendChild(t.attach()));
+  await room.connect(LIVEKIT_URL,d.token);
+  const cam=await LiveKit.createLocalVideoTrack({facingMode:"user"});
+  const mic=await LiveKit.createLocalAudioTrack();
+  await room.localParticipant.publishTrack(cam);
+  await room.localParticipant.publishTrack(mic);
+  const v=cam.attach();
+  v.muted=true;v.playsInline=true;v.autoplay=true;
+  stage.appendChild(v);
+}
+
+/* VIEWER */
+watchBtn.onclick=async()=>{
+  const r=await fetch(`${BACKEND}/api/stream/viewer-token?room=${ROOM}`);
+  const d=await r.json();
+  room=new LiveKit.Room();
+  room.on(LiveKit.RoomEvent.TrackSubscribed,t=>stage.appendChild(t.attach()));
   tab("live");
   await room.connect(LIVEKIT_URL,d.token);
-}
+};
 
-/* ---------------- GIFTS ---------------- */
-async function sendGift(){
-  const r = await fetch(`${BACKEND}/api/gifts/send`,{
+/* GIFTS */
+giftBtn.onclick=async()=>{
+  const r=await fetch(`${BACKEND}/api/gifts/send`,{
     method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "Authorization":localStorage.token
-    },
+    headers:{"Content-Type":"application/json","Authorization":localStorage.token},
     body:JSON.stringify({giftId:"rose",cost:100,room:ROOM})
   });
-  const d = await r.json();
-  if(!d.success){alert("Not enough coins");return;}
-  document.getElementById("coinDisplay").innerText = "🪙 " + d.balance;
-  showGift();
-}
-function showGift(){
+  const d=await r.json();
+  if(!d.success)return alert("No coins");
+  coinDisplay.textContent=`🪙 ${d.balance}`;
   const g=document.createElement("div");
-  g.className="gift-float";
-  g.innerText="🎁";
+  g.className="gift-float";g.textContent="🎁";
   document.body.appendChild(g);
   setTimeout(()=>g.remove(),2000);
-}
-  document.getElementById("goLiveBtn").addEventListener("click", async () => {
-  await goLive();
-});
+};
 </script>
 
 </body>
