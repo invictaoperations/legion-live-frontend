@@ -21,7 +21,7 @@ header .coins{color:var(--gold);font-weight:bold}
 .card{background:var(--panel);border:1px solid #222;border-radius:10px;padding:12px;margin-bottom:14px}
 button{width:100%;padding:12px;margin-top:8px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-weight:bold}
 input{width:100%;padding:12px;margin-bottom:8px;background:#000;border:1px solid #333;color:#fff;border-radius:8px}
-#stage video{width:100%;border-radius:8px;margin-bottom:8px}
+#stage video{width:100%;border-radius:8px;margin-bottom:8px;background:#000}
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#000;border-top:1px solid #222}
 nav div{flex:1;text-align:center;padding:10px;font-size:12px;color:var(--muted)}
 nav div.active{color:#fff}
@@ -104,15 +104,14 @@ function auth(type){
   }).then(r=>r.json()).then(d=>{
     if(!d.token)return alert("Auth failed");
     localStorage.token=d.token;
-    auth.classList?.remove?.("active");
     tab("discover");
     coinDisplay.textContent=`🪙 ${d.coins||0}`;
     profileEmail.textContent=email.value;
   });
 }
 
-/* CAMERA PERMISSION (ANDROID SAFE) */
-goLiveBtn.addEventListener("click", async ()=>{
+/* CAMERA PERMISSION (ONCE) */
+goLiveBtn.onclick=async()=>{
   try{
     const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:true});
     s.getTracks().forEach(t=>t.stop());
@@ -120,22 +119,44 @@ goLiveBtn.addEventListener("click", async ()=>{
   }catch(e){
     alert("Camera/Mic blocked.\nTap 🔒 → Allow → Reload");
   }
-});
+};
 
-/* LIVEKIT */
+/* LIVEKIT HOST */
 async function startStream(){
   const r=await fetch(`${BACKEND}/api/stream/host-token?room=${ROOM}`);
   const d=await r.json();
+
   room=new LiveKit.Room();
-  room.on(LiveKit.RoomEvent.TrackSubscribed,t=>stage.appendChild(t.attach()));
+
+  room.on(LiveKit.RoomEvent.TrackSubscribed, track=>{
+    const el=track.attach();
+    el.autoplay=true;
+    el.playsInline=true;
+    document.getElementById("stage").appendChild(el);
+  });
+
   await room.connect(LIVEKIT_URL,d.token);
+
   const cam=await LiveKit.createLocalVideoTrack({facingMode:"user"});
   const mic=await LiveKit.createLocalAudioTrack();
+
   await room.localParticipant.publishTrack(cam);
   await room.localParticipant.publishTrack(mic);
-  const v=cam.attach();
-  v.muted=true;v.playsInline=true;v.autoplay=true;
-  stage.appendChild(v);
+
+  // 🔴 ANDROID RENDER FIX
+  const videoEl=document.createElement("video");
+  videoEl.autoplay=true;
+  videoEl.muted=true;
+  videoEl.playsInline=true;
+  videoEl.style.width="100%";
+
+  cam.attach(videoEl);
+
+  setTimeout(()=>{
+    const stage=document.getElementById("stage");
+    stage.innerHTML="";
+    stage.appendChild(videoEl);
+  },50);
 }
 
 /* VIEWER */
@@ -143,7 +164,12 @@ watchBtn.onclick=async()=>{
   const r=await fetch(`${BACKEND}/api/stream/viewer-token?room=${ROOM}`);
   const d=await r.json();
   room=new LiveKit.Room();
-  room.on(LiveKit.RoomEvent.TrackSubscribed,t=>stage.appendChild(t.attach()));
+  room.on(LiveKit.RoomEvent.TrackSubscribed, track=>{
+    const el=track.attach();
+    el.autoplay=true;
+    el.playsInline=true;
+    document.getElementById("stage").appendChild(el);
+  });
   tab("live");
   await room.connect(LIVEKIT_URL,d.token);
 };
