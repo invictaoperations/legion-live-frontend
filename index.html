@@ -194,33 +194,51 @@ function afterAuth(d){
   document.getElementById("profileEmail").innerText = email.value;
 }
 
-/* ---------------- LIVE (FORCED PERMISSION) ---------------- */
+/* ---------------- LIVE (MOBILE-SAFE, PRODUCTION) ---------------- */
 async function goLive(){
-  try{
-    // FORCE permission prompt
-    const s = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
-    s.getTracks().forEach(t=>t.stop());
+  try {
+    // 1️⃣ Force permission immediately (required on mobile)
+    const permissionStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" },
+      audio: true
+    });
+    permissionStream.getTracks().forEach(t => t.stop());
 
+    // 2️⃣ Create LiveKit tracks BEFORE connect
+    const videoTrack = await LiveKit.createLocalVideoTrack({
+      facingMode: "user"
+    });
+    const audioTrack = await LiveKit.createLocalAudioTrack();
+
+    // 3️⃣ Fetch token
     const r = await fetch(`${BACKEND}/api/stream/host-token?room=${ROOM}`);
     const d = await r.json();
 
+    // 4️⃣ Connect
     room = new LiveKit.Room();
-    room.on(LiveKit.RoomEvent.TrackSubscribed, t=>{
-      document.getElementById("stage").appendChild(t.attach());
+    room.on(LiveKit.RoomEvent.TrackSubscribed, track => {
+      document.getElementById("stage").appendChild(track.attach());
     });
 
-    await room.connect(LIVEKIT_URL,d.token);
+    await room.connect(LIVEKIT_URL, d.token);
 
-    const cam = await LiveKit.createLocalVideoTrack();
-    const mic = await LiveKit.createLocalAudioTrack();
+    // 5️⃣ Publish tracks
+    await room.localParticipant.publishTrack(videoTrack);
+    await room.localParticipant.publishTrack(audioTrack);
 
-    await room.localParticipant.publishTrack(cam);
-    await room.localParticipant.publishTrack(mic);
+    // 6️⃣ Attach local video correctly for mobile
+    const videoEl = videoTrack.attach();
+    videoEl.muted = true;        // REQUIRED
+    videoEl.playsInline = true;  // REQUIRED
+    videoEl.autoplay = true;     // REQUIRED
+    document.getElementById("stage").appendChild(videoEl);
 
-    document.getElementById("stage").appendChild(cam.attach());
-  }catch(e){
-    alert("Camera/Mic error");
-    console.error(e);
+  } catch (err) {
+    console.error(err);
+    alert(
+      "Camera/Mic blocked.\n\n" +
+      "Tap 🔒 in the address bar → Site settings → Allow Camera & Mic → Reload."
+    );
   }
 }
 
