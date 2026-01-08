@@ -135,7 +135,7 @@ nav div.active{color:#fff}
 <div id="live" class="section">
   <div class="card">
     <h3>Go Live</h3>
-    <button id="goLiveBtn">Start Stream</button>
+    <button onclick="requestMedia()">Start Stream</button>
     <button onclick="sendGift()">Send Test Gift (100🪙)</button>
   </div>
   <div id="stage"></div>
@@ -195,7 +195,26 @@ function afterAuth(d){
 }
 
 /* ---------------- LIVE (MOBILE-SAFE, PRODUCTION) ---------------- */
-async function goLive(){
+async function requestMedia(){
+  try{
+    // This MUST be alone and first
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" },
+      audio: true
+    });
+
+    // Stop tracks immediately (permission stays granted)
+    stream.getTracks().forEach(t => t.stop());
+
+    // NOW go live
+    await goLive();
+  }catch(err){
+    console.error(err);
+    alert("Camera/Microphone permission denied by browser");
+  }
+}
+
+  async function goLive(){
   try {
     // 1️⃣ Force permission immediately (required on mobile)
     const permissionStream = await navigator.mediaDevices.getUserMedia({
