@@ -276,6 +276,9 @@ function showGift(){
   document.body.appendChild(g);
   setTimeout(()=>g.remove(),2000);
 }
+  document.getElementById("goLiveBtn").addEventListener("click", async () => {
+  await goLive();
+});
 </script>
 
 </body>
